@@ -50,7 +50,7 @@ import org.springframework.test.context.DynamicPropertySource;
 class OrderOutboxToKafkaIntegrationTest {
 
   private static final String BOOTSTRAP = "localhost:29092";
-  private static final String TOPIC = "commands.order.v1";
+  private static final String TOPIC = "commands.payment.v1";
 
   @DynamicPropertySource
   static void props(DynamicPropertyRegistry registry) {

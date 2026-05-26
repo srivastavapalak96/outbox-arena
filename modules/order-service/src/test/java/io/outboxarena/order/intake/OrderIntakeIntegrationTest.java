@@ -90,9 +90,9 @@ class OrderIntakeIntegrationTest {
     assertThat(persisted.getItems()).extracting("sku").containsExactlyInAnyOrder("sku-1", "sku-2");
 
     OutboxRecord onlyOutbox = outboxRepository.findAll().get(0);
-    assertThat(onlyOutbox.getAggregateType()).isEqualTo("Order");
+    assertThat(onlyOutbox.getAggregateType()).isEqualTo("Payment");
     assertThat(onlyOutbox.getAggregateId()).isEqualTo(response.orderUuid().toString());
-    assertThat(onlyOutbox.getEventType()).isEqualTo("OrderCreated");
+    assertThat(onlyOutbox.getEventType()).isEqualTo("PaymentRequested");
     assertThat(onlyOutbox.getPublishedAt()).isNull();
     assertThat(onlyOutbox.getPayload()).contains(response.orderUuid().toString());
   }

@@ -2,6 +2,8 @@ package io.outboxarena.order.intake;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.outboxarena.common.events.EventTypes;
+import io.outboxarena.common.events.PaymentEvents;
 import io.outboxarena.common.outbox.OutboxRecord;
 import io.outboxarena.common.outbox.OutboxRecordRepository;
 import io.outboxarena.order.domain.Order;
@@ -9,8 +11,6 @@ import io.outboxarena.order.domain.OrderItem;
 import io.outboxarena.order.domain.OrderRepository;
 import io.outboxarena.order.domain.Saga;
 import io.outboxarena.order.domain.SagaRepository;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderIntakeService {
 
-  static final String OUTBOX_AGGREGATE_TYPE = "Order";
-  static final String EVENT_ORDER_CREATED = "OrderCreated";
+  static final String OUTBOX_AGGREGATE_TYPE = "Payment";
   private static final int OUTBOX_SHARDS = 16;
 
   private final OrderRepository orderRepository;
@@ -60,13 +59,18 @@ public class OrderIntakeService {
     Saga saga = new Saga(UUID.randomUUID(), persisted.getId());
     sagaRepository.save(saga);
 
+    // First saga step: ask payment-service to authorise. The outbox poller routes by
+    // aggregate_type -> commands.payment.v1 (see OutboxPoller.topicFor).
+    PaymentEvents.PaymentRequested paymentRequest =
+        new PaymentEvents.PaymentRequested(
+            orderUuid, persisted.getTotalAmountCents(), persisted.getCurrency());
     OutboxRecord record =
         new OutboxRecord(
             UUID.randomUUID(),
             OUTBOX_AGGREGATE_TYPE,
             orderUuid.toString(),
-            EVENT_ORDER_CREATED,
-            serialiseOrderCreated(persisted),
+            EventTypes.PAYMENT_REQUESTED,
+            serialise(paymentRequest),
             shardKeyFor(orderUuid));
     outboxRepository.save(record);
 
@@ -74,17 +78,12 @@ public class OrderIntakeService {
         persisted.getOrderUuid(), persisted.getStatus(), persisted.getTotalAmountCents());
   }
 
-  private String serialiseOrderCreated(Order order) {
-    Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("orderUuid", order.getOrderUuid().toString());
-    payload.put("buyerId", order.getBuyerId());
-    payload.put("currency", order.getCurrency());
-    payload.put("totalAmountCents", order.getTotalAmountCents());
-    payload.put("itemCount", order.getItems().size());
+  private String serialise(Object payload) {
     try {
       return objectMapper.writeValueAsString(payload);
     } catch (JsonProcessingException e) {
-      throw new IllegalStateException("Failed to serialise OrderCreated payload", e);
+      throw new IllegalStateException(
+          "Failed to serialise " + payload.getClass().getSimpleName(), e);
     }
   }
 
