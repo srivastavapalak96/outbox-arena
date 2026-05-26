@@ -275,11 +275,11 @@ first.
 |-----|-------|--------|
 | [0001](docs/adr/0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
 | [0002](docs/adr/0002-outbox-and-cdc-as-distinct-planes.md) | Outbox and CDC as distinct planes | Accepted |
-| 0003 | PostgreSQL over MySQL | PLANNED |
-| 0004 | Orchestration saga over choreography | PLANNED |
-| 0005 | Sharded outbox poller with `SELECT FOR UPDATE SKIP LOCKED` | PLANNED |
-| 0006 | Postgres `processed_events` over Redis SETNX for consumer idempotency | PLANNED |
-| 0007 | No Debezium Outbox SMT (`EventRouter`) | PLANNED |
+| [0003](docs/adr/0003-postgresql-over-mysql.md) | PostgreSQL 16 over MySQL | Accepted |
+| [0004](docs/adr/0004-orchestration-saga-over-choreography.md) | Orchestration saga over choreography | Accepted |
+| [0005](docs/adr/0005-sharded-outbox-poller-with-skip-locked.md) | Sharded outbox poller with `SELECT FOR UPDATE SKIP LOCKED` | Accepted |
+| [0006](docs/adr/0006-postgres-processed_events-over-redis-setnx.md) | Postgres `processed_events` over Redis SETNX for consumer idempotency | Accepted |
+| [0007](docs/adr/0007-no-debezium-outbox-smt.md) | No Debezium Outbox SMT (`EventRouter`) | Accepted |
 
 ## Status
 
