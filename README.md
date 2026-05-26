@@ -217,12 +217,23 @@ make health-infra             # confirms postgres + kafka + connect responding
 #   Brings up the full stack with Debezium, posts an order, asserts the
 #   projection-service order_views row reaches COMPLETED via WAL tailing.
 
-# 7. Look at the dashboards.
+# 7. Run the full regression sweep (all 7 scenarios in sequence, ~5 minutes).
+./chaos/scenarios/run-all.sh
+#   Last run summary:
+#     PASS  37s  happy-path.sh
+#     PASS  30s  compensation-payment-fail.sh
+#     PASS  27s  compensation-inventory-reject.sh
+#     PASS  31s  compensation-shipment-fail.sh
+#     PASS  45s  cdc-projection.sh
+#     PASS  32s  chaos-broker-kill.sh
+#     PASS  73s  chaos-multi-poller-race.sh
+
+# 8. Look at the dashboards.
 open http://localhost:3000      # Grafana (admin/admin), saga-health + outbox-health dashboards
 open http://localhost:9090      # Prometheus query UI
 open http://localhost:16686     # Jaeger UI (traces come in a future week)
 
-# 8. Tear it all down.
+# 9. Tear it all down.
 make down-clean                 # also wipes the postgres volume
 ```
 

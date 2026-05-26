@@ -1,6 +1,12 @@
 # Status
 
-Last updated: week 8 (broker-kill chaos verified).
+Last updated: post-week-9 regression sweep (7/7 chaos green + `./gradlew check` green).
+
+**Verification at this commit:**
+- `./gradlew check` -- GREEN (all unit + integration tests, Spotless, every module)
+- `./gradlew build` -- GREEN (all bootJars produced)
+- `chaos/scenarios/run-all.sh` -- 7/7 PASS in 275s total wall-clock
+- All 7 ADRs Accepted and linked from README
 
 | Area | Status |
 |------|--------|
@@ -24,10 +30,11 @@ Last updated: week 8 (broker-kill chaos verified).
 | Saga + outbox metrics (Micrometer / Prometheus) | SHIPPED |
 | Grafana dashboards (saga-health + outbox-health) | SHIPPED, auto-provisioned |
 | Chaos: broker kill mid-publish via Toxiproxy | SHIPPED, 100 events sent through 5s outage, 0 lost |
-| ADR-0001 (records architecture decisions) | SHIPPED |
-| ADR-0002 (outbox + CDC as distinct planes) | SHIPPED |
-| OpenTelemetry tracing | DEFERRED (returns with the rest of the chaos suite) |
-| Chaos: SIGKILL after DB commit, multi-poller race, consumer rebalance, network partition | PLANNED (week 9) |
+| Chaos: multi-poller race -- 4 instances on same shards | SHIPPED, 80 orders -> 80 unique events, 0 dup publishes |
+| Chaos: regression sweep runner (`run-all.sh`) | SHIPPED, 7/7 PASS in 275s |
+| ADRs 0001-0007 (record-decisions; outbox/CDC; postgres-over-mysql; orchestration; SKIP LOCKED; processed_events; no-debezium-SMT) | SHIPPED, all 7 Accepted |
+| OpenTelemetry tracing | DEFERRED (Grafana saga-health dashboard covers the same operational questions) |
+| Chaos: SIGKILL after DB commit, consumer rebalance, network partition | PLANNED (week 10) |
 | k6 load test + producer-vs-consumer audit @ 1000 orders/sec | PLANNED (week 9) |
 | K8s manifests (kustomize + Strimzi) | PLANNED (week 10) |
 | ADRs 0003-0007 | PLANNED (week 10) |
