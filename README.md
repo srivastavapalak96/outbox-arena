@@ -26,15 +26,16 @@ running Docker Desktop 29.2.1 + Postgres 16 + Kafka 3.7 (KRaft) + Debezium 2.7.3
 | [Compensation: shipment fails](chaos/scenarios/compensation-shipment-fail.sh) -> release + refund -> CANCELLED | 1 | 1 cancelled + refunded + released | **0.00%** | ~6s |
 | [CDC -> projection](chaos/scenarios/cdc-projection.sh): WAL -> Debezium -> order_views read model | 1 order | 1 view row at status=COMPLETED | **0.00%** | 3s (CDC lag) |
 | [Broker kill mid-publish](chaos/scenarios/chaos-broker-kill.sh): proxy cut after 20% of POSTs; 5s outage | 100 | 100 unique event-ids on topic | **0.00%** | <1s drain after heal |
+| [Multi-poller race](chaos/scenarios/chaos-multi-poller-race.sh): 4 order-service instances polling same shards | 80 | 80 unique event-ids, 0 duplicates | **0.00%** | <1s drain |
 
-Planned for week 9 (these add to the table, not replace existing rows):
+Planned for week 9 / 10:
 
 | Scenario | Status |
 |----------|--------|
 | 1,000 orders/sec for 5 min via k6 + producer-vs-consumer audit | PLANNED |
-| Multi-poller race (4 order-service instances on same shards) | PLANNED |
 | SIGKILL after DB commit before outbox flush | PLANNED |
 | Consumer rebalance mid-batch | PLANNED |
+| K8s manifests + HPA on outbox.unpublished | PLANNED |
 
 ## Architecture
 
