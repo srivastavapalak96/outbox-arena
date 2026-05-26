@@ -5,7 +5,7 @@ Last updated: post-week-9 regression sweep (7/7 chaos green + `./gradlew check` 
 **Verification at this commit:**
 - `./gradlew check` -- GREEN (all unit + integration tests, Spotless, every module)
 - `./gradlew build` -- GREEN (all bootJars produced)
-- `chaos/scenarios/run-all.sh` -- 7/7 PASS in 275s total wall-clock
+- `chaos/scenarios/run-all.sh` -- 9/9 PASS in 420s total wall-clock
 - All 7 ADRs Accepted and linked from README
 
 | Area | Status |

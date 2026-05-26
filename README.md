@@ -219,16 +219,16 @@ make health-infra             # confirms postgres + kafka + connect responding
 
 # 7. Run the full regression sweep (all 7 scenarios in sequence, ~5 minutes).
 ./chaos/scenarios/run-all.sh
-#   Last run summary (9/9 PASS):
-#     PASS  37s  happy-path.sh
-#     PASS  30s  compensation-payment-fail.sh
-#     PASS  27s  compensation-inventory-reject.sh
-#     PASS  31s  compensation-shipment-fail.sh
-#     PASS  45s  cdc-projection.sh
-#     PASS  32s  chaos-broker-kill.sh
-#     PASS  73s  chaos-multi-poller-race.sh
-#     PASS  45s  chaos-sigkill-order-service.sh
-#     PASS  60s  chaos-consumer-rebalance.sh
+#   Last full-sweep result (9/9 PASS, 420s wall-clock):
+#     PASS  31s  happy-path.sh
+#     PASS  36s  compensation-payment-fail.sh
+#     PASS  33s  compensation-inventory-reject.sh
+#     PASS  39s  compensation-shipment-fail.sh
+#     PASS  62s  cdc-projection.sh
+#     PASS  33s  chaos-broker-kill.sh
+#     PASS  74s  chaos-multi-poller-race.sh
+#     PASS  47s  chaos-sigkill-order-service.sh
+#     PASS  65s  chaos-consumer-rebalance.sh
 
 # 8. Look at the dashboards.
 open http://localhost:3000      # Grafana (admin/admin), saga-health + outbox-health dashboards
