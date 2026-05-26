@@ -12,8 +12,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * One row in a service's outbox table. Written inside the same transaction as the business
- * change it describes; later polled and shipped to Kafka by an OutboxPoller (week 3).
+ * One row in a service's outbox table. Written inside the same transaction as the business change
+ * it describes; later polled and shipped to Kafka by an OutboxPoller (week 3).
  */
 @Entity
 @Table(name = "outbox")

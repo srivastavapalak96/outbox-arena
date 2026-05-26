@@ -10,9 +10,9 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Saga state row, one per order. The orchestrator (week 4) updates this in the same
- * transaction that consumes each saga-reply event, so the row is the source of truth for
- * "what step are we on" -- queryable in psql for debugging.
+ * Saga state row, one per order. The orchestrator (week 4) updates this in the same transaction
+ * that consumes each saga-reply event, so the row is the source of truth for "what step are we on"
+ * -- queryable in psql for debugging.
  */
 @Entity
 @Table(name = "sagas")

@@ -8,9 +8,9 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Consumer-side idempotency marker. Insert one row per (event_id, consumer_group); a
- * duplicate-key violation means "already processed -- drop the event." Must be written in
- * the same transaction as the downstream business write.
+ * Consumer-side idempotency marker. Insert one row per (event_id, consumer_group); a duplicate-key
+ * violation means "already processed -- drop the event." Must be written in the same transaction as
+ * the downstream business write.
  */
 @Entity
 @Table(name = "processed_events")

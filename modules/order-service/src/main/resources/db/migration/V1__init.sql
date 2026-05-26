@@ -8,7 +8,7 @@ CREATE TABLE orders (
     buyer_id           VARCHAR(64)  NOT NULL,
     status             VARCHAR(32)  NOT NULL,
     total_amount_cents BIGINT       NOT NULL,
-    currency           CHAR(3)      NOT NULL,
+    currency           VARCHAR(3)   NOT NULL,
     created_at         TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at         TIMESTAMPTZ  NOT NULL DEFAULT now(),
     version            BIGINT       NOT NULL DEFAULT 0
