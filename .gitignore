@@ -1,0 +1,39 @@
+# Gradle
+.gradle/
+build/
+!gradle-wrapper.jar
+**/build/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.project
+.classpath
+.settings/
+out/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local config / secrets (never commit)
+*.env
+.env.local
+.env.*.local
+
+# Test outputs
+/test-output/
+
+# Docker / Compose ephemera
+docker-compose.override.yml
+
+# k6 result files
+*.k6.json

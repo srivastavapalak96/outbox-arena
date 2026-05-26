@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: outbox-arena
+    type: file
+    folder: outbox-arena
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

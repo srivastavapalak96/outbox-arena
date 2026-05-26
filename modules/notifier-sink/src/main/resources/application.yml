@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: notifier-sink
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: notifier-sink
+      properties:
+        isolation.level: read_committed
+      auto-offset-reset: latest
+
+# No datasource. No Flyway. Pure Kafka consumer that writes to stdout.
+
+server:
+  port: 8086
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  prometheus:
+    metrics:
+      export:
+        enabled: true

@@ -1,0 +1,41 @@
+[versions]
+java                  = "17"
+springBoot            = "3.3.4"
+springDependencyMgmt  = "1.1.6"
+kafkaClient           = "3.7.1"
+debeziumApi           = "2.7.3.Final"
+postgresqlDriver      = "42.7.4"
+flyway                = "10.20.1"
+testcontainers        = "1.20.3"
+otelInstrumentation   = "2.9.0"
+micrometerTracing     = "1.3.5"
+jib                   = "3.4.4"
+spotless              = "6.25.0"
+
+[libraries]
+spring-boot-starter-web        = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-actuator   = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-data-jpa   = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-kafka                   = { module = "org.springframework.kafka:spring-kafka" }
+postgresql                     = { module = "org.postgresql:postgresql",            version.ref = "postgresqlDriver" }
+flyway-core                    = { module = "org.flywaydb:flyway-core",              version.ref = "flyway" }
+flyway-postgresql              = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+kafka-clients                  = { module = "org.apache.kafka:kafka-clients",        version.ref = "kafkaClient" }
+micrometer-prometheus          = { module = "io.micrometer:micrometer-registry-prometheus" }
+micrometer-tracing-bridge-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel", version.ref = "micrometerTracing" }
+otel-exporter-otlp             = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
+otel-spring-starter            = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
+jackson-databind               = { module = "com.fasterxml.jackson.core:jackson-databind" }
+spring-boot-starter-test       = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-kafka-test              = { module = "org.springframework.kafka:spring-kafka-test" }
+testcontainers-bom             = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-junit           = { module = "org.testcontainers:junit-jupiter" }
+testcontainers-postgresql      = { module = "org.testcontainers:postgresql" }
+testcontainers-kafka           = { module = "org.testcontainers:kafka" }
+
+[plugins]
+spring-boot              = { id = "org.springframework.boot",                 version.ref = "springBoot" }
+spring-dependency-mgmt   = { id = "io.spring.dependency-management",          version.ref = "springDependencyMgmt" }
+jib                      = { id = "com.google.cloud.tools.jib",               version.ref = "jib" }
+spotless                 = { id = "com.diffplug.spotless",                    version.ref = "spotless" }

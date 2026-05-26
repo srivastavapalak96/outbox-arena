@@ -1,0 +1,28 @@
+{
+  "name": "outbox-arena-cdc",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "plugin.name": "pgoutput",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "debezium",
+    "database.password": "debezium",
+    "database.dbname": "order_svc",
+    "topic.prefix": "cdc",
+    "slot.name": "outbox_arena_slot",
+    "publication.name": "outbox_arena_pub",
+    "publication.autocreate.mode": "filtered",
+
+    "//comment_table_list":
+      "Tail business tables only. outbox is INTENTIONALLY excluded -- doing otherwise would double-publish events. See docs/adr/0002.",
+    "table.include.list": "public.orders,public.order_items,public.payments,public.shipments",
+
+    "snapshot.mode": "initial",
+    "decimal.handling.mode": "string",
+
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "false",
+    "transforms.unwrap.delete.handling.mode": "rewrite"
+  }
+}
