@@ -1,0 +1,18 @@
+{
+  "buyerId": "buyer-demo-001",
+  "currency": "USD",
+  "items": [
+    {
+      "sellerId": "seller-acme",
+      "sku": "ACME-WIDGET-001",
+      "qty": 2,
+      "unitPriceCents": 1499
+    },
+    {
+      "sellerId": "seller-globex",
+      "sku": "GLOBEX-GADGET-007",
+      "qty": 1,
+      "unitPriceCents": 9999
+    }
+  ]
+}

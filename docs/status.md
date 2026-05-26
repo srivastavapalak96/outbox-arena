@@ -1,16 +1,21 @@
 # Status
 
-Last updated: week 1.
+Last updated: week 2.
 
 | Area | Status |
 |------|--------|
 | Gradle multi-module skeleton | SHIPPED, `./gradlew build` green |
-| 6 Spring Boot service modules (boot + actuator only) | SHIPPED, order-service verified locally on 8081 |
+| 6 Spring Boot service modules (boot + actuator only) | SHIPPED, order-service + payment-service verified locally |
 | Docker Compose: Postgres 16 with `wal_level=logical` | SHIPPED, healthy |
 | Docker Compose: Kafka 3.7 KRaft, single broker | SHIPPED, healthy |
 | Docker Compose: Kafka Connect with Debezium 2.7.3 | SHIPPED, healthy |
 | Docker Compose: Prometheus + Grafana + Jaeger | SHIPPED, all reachable |
-| Flyway migrations | PLANNED (week 2) |
+| Flyway migrations for all saga participants + projection | SHIPPED |
+| JPA entities for order/item/saga/payment/inventory/reservation/shipment/order_view | SHIPPED |
+| OutboxRecord + ProcessedEvent shared in modules/common | SHIPPED |
+| order-service POST /orders writes orders+items+saga+outbox atomically | SHIPPED, 3 tests green |
+| ADR-0001 (records architecture decisions) | SHIPPED |
+| ADR-0002 (outbox + CDC as distinct planes) | SHIPPED |
 | Outbox poller (sharded, `SKIP LOCKED`) | PLANNED (week 3) |
 | Saga happy-path orchestration | PLANNED (week 4) |
 | Saga compensation flows | PLANNED (week 5) |
