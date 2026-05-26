@@ -24,8 +24,10 @@ Last updated: week 5.
 | Saga compensation: PaymentFailed -> CANCELLED | SHIPPED, 2s scenario green |
 | Saga compensation: InventoryRejected -> Refund -> CANCELLED | SHIPPED, 6s scenario green |
 | Saga compensation: ShipmentFailed -> Release -> Refund -> CANCELLED | SHIPPED, ~6s scenario green |
-| Debezium connector wired + projection-service consumes CDC events | PLANNED (week 6) |
-| Observability dashboards + traces | PLANNED (week 7) |
+| Debezium connector wired + projection-service consumes CDC events | SHIPPED, end-to-end scenario green in 3s |
+| Saga + outbox metrics (Micrometer) | SHIPPED |
+| Grafana dashboards (saga-health + outbox-health) | SHIPPED, auto-provisioned |
+| OpenTelemetry tracing | DEFERRED (returns with chaos suite where multi-hop debugging earns the setup cost) |
 | Chaos test suite (5 scenarios via Toxiproxy) | PLANNED (week 8) |
 | k6 load test + audit | PLANNED (week 9) |
 | K8s manifests | PLANNED (week 10) |
