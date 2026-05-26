@@ -35,7 +35,7 @@ Planned for week 9 / 10:
 | 1,000 orders/sec for 5 min via k6 + producer-vs-consumer audit | PLANNED |
 | SIGKILL after DB commit before outbox flush | PLANNED |
 | Consumer rebalance mid-batch | PLANNED |
-| K8s manifests + HPA on outbox.unpublished | PLANNED |
+| K8s manifests + HPA on outbox.unpublished | base SHIPPED; custom-metric HPA documented (commented out) pending Prometheus adapter |
 
 ## Architecture
 
@@ -265,7 +265,9 @@ chaos/scenarios/                End-to-end verification scripts
   cdc-projection.sh             WAL -> Debezium -> projection-service
   chaos-broker-kill.sh          Toxiproxy mid-flight outage
 
-k8s/                            Kustomize manifests (planned for week 10)
+k8s/                            Kustomize manifests for kind/dev/prod (see k8s/README.md)
+  base/                         Postgres StatefulSet, Strimzi Kafka, 6 services + HPA
+  overlays/local-kind/          NodePort + :local image tags for kind clusters
 load/                           k6 scripts (planned for week 9)
 
 docs/
