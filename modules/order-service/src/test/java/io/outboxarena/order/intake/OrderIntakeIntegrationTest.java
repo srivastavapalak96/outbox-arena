@@ -48,9 +48,12 @@ class OrderIntakeIntegrationTest {
     registry.add("spring.flyway.clean-disabled", () -> "false");
     registry.add("spring.kafka.bootstrap-servers", () -> "localhost:29092");
     registry.add("spring.kafka.listener.auto-startup", () -> "false");
-    // This test verifies *only* the atomic write. Leave the outbox in the table; the
-    // poller-Kafka-end-to-end test (Week 3) drives that path explicitly.
-    registry.add("outbox-arena.outbox.enabled", () -> "false");
+    // Keep the outbox auto-configuration ON so IdempotentConsumer / OutboxBacklogGauge
+    // beans (needed by OrderSagaOrchestrator + SagaMetrics) are present. The scheduler
+    // is muted with a 1-hour poll interval so it never sweeps during the test -- we're
+    // exercising the atomic write path only here, not the Kafka publish.
+    registry.add("outbox-arena.outbox.enabled", () -> "true");
+    registry.add("outbox-arena.outbox.poll-interval", () -> "PT1H");
   }
 
   @Autowired OrderIntakeService intake;
