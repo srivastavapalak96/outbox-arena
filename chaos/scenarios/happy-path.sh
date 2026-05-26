@@ -15,7 +15,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT"
 
 DEADLINE_SECONDS="${DEADLINE_SECONDS:-30}"
-JAVA_HOME_OVERRIDE="${JAVA_HOME_OVERRIDE:-/Users/shivangbelwariar/Library/Java/JavaVirtualMachines/amazon-corretto-21.jdk/Contents/Home}"
+JAVA_HOME_OVERRIDE="/Users/shivangbelwariar/Library/Java/JavaVirtualMachines/amazon-corretto-21.jdk/Contents/Home"
 export JAVA_HOME="$JAVA_HOME_OVERRIDE"
 # Services bootRun from the host machine connect via the EXTERNAL listener on
 # 29092; the broker's PLAINTEXT listener (kafka:9092) only resolves inside the

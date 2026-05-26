@@ -30,8 +30,9 @@ public class ShippingConsumer {
   static final String CONSUMER_GROUP = "shipping-service";
 
   /**
-   * If set, any order whose UUID starts with this string is forced to fail dispatch. Lets the
-   * week-5 compensation scenario drive the shipment-failed path deterministically.
+   * Comma-separated list of UUID prefixes. Any order whose UUID starts with one of these is forced
+   * to fail dispatch. Lets the week-5 compensation scenario drive the shipment-failed path
+   * deterministically by listing multiple plausible prefixes (e.g. "0,1,2,3,4").
    */
   @org.springframework.beans.factory.annotation.Value("${shipping.force-fail-prefix:}")
   private String forceFailPrefix;
@@ -76,10 +77,17 @@ public class ShippingConsumer {
     String carrier = CARRIERS[Math.floorMod(req.orderUuid().hashCode(), CARRIERS.length)];
     Shipment shipment = new Shipment(req.orderUuid(), carrier);
 
-    boolean forceFail =
-        forceFailPrefix != null
-            && !forceFailPrefix.isBlank()
-            && req.orderUuid().toString().startsWith(forceFailPrefix);
+    boolean forceFail = false;
+    if (forceFailPrefix != null && !forceFailPrefix.isBlank()) {
+      String orderStr = req.orderUuid().toString();
+      for (String prefix : forceFailPrefix.split(",")) {
+        String trimmed = prefix.trim();
+        if (!trimmed.isEmpty() && orderStr.startsWith(trimmed)) {
+          forceFail = true;
+          break;
+        }
+      }
+    }
 
     String replyType;
     Object replyPayload;
