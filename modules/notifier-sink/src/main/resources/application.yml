@@ -11,6 +11,11 @@ spring:
 
 # No datasource. No Flyway. Pure Kafka consumer that writes to stdout.
 
+outbox-arena:
+  outbox:
+    # No outbox table here -- the poller stays out of this service entirely.
+    enabled: false
+
 server:
   port: 8086
 
