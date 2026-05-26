@@ -14,6 +14,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.kafka:spring-kafka-test")
+    testImplementation("org.awaitility:awaitility:4.2.2")
     // Testcontainers will return in a later week once 1.21.x ships docker-java with
     // Docker 29 /info compatibility. Until then integration tests run against the
     // docker-compose Postgres on localhost:5432, gated by EA_INTEGRATION=1.

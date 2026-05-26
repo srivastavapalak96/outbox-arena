@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"io.outboxarena.payment", "io.outboxarena.common"})
 @EntityScan(basePackageClasses = {PaymentApplication.class, OutboxRecord.class})
 @EnableJpaRepositories(basePackageClasses = {PaymentApplication.class, OutboxRecord.class})
 public class PaymentApplication {

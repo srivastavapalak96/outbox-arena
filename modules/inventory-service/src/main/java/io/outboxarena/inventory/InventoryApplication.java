@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"io.outboxarena.inventory", "io.outboxarena.common"})
 @EntityScan(basePackageClasses = {InventoryApplication.class, OutboxRecord.class})
 @EnableJpaRepositories(basePackageClasses = {InventoryApplication.class, OutboxRecord.class})
 public class InventoryApplication {

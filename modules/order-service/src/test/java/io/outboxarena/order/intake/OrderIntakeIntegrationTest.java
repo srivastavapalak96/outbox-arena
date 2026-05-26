@@ -48,6 +48,9 @@ class OrderIntakeIntegrationTest {
     registry.add("spring.flyway.clean-disabled", () -> "false");
     registry.add("spring.kafka.bootstrap-servers", () -> "localhost:29092");
     registry.add("spring.kafka.listener.auto-startup", () -> "false");
+    // This test verifies *only* the atomic write. Leave the outbox in the table; the
+    // poller-Kafka-end-to-end test (Week 3) drives that path explicitly.
+    registry.add("outbox-arena.outbox.enabled", () -> "false");
   }
 
   @Autowired OrderIntakeService intake;
