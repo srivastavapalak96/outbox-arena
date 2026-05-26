@@ -70,46 +70,82 @@ public class OrderSagaOrchestrator {
   @KafkaListener(topics = Topics.PAYMENT_COMMANDS, groupId = CONSUMER_GROUP)
   public void onPaymentEvent(ConsumerRecord<String, String> record) {
     String eventType = headerOrNull(record, "event-type");
-    if (!EventTypes.PAYMENT_AUTHORIZED.equals(eventType)
-        && !EventTypes.PAYMENT_FAILED.equals(eventType)) {
-      return; // not a reply we care about (skips PaymentRequested we wrote ourselves)
+    if (eventType == null) {
+      return;
     }
     UUID eventId = UUID.fromString(headerOrNull(record, "event-id"));
-    idempotent.once(
-        eventId,
-        CONSUMER_GROUP,
-        () -> {
-          if (EventTypes.PAYMENT_AUTHORIZED.equals(eventType)) {
-            handlePaymentAuthorized(
-                readJson(record.value(), PaymentEvents.PaymentAuthorized.class));
-          } else {
-            handlePaymentFailed(readJson(record.value(), PaymentEvents.PaymentFailed.class));
-          }
-          return null;
-        });
+    switch (eventType) {
+      case EventTypes.PAYMENT_AUTHORIZED ->
+          idempotent.once(
+              eventId,
+              CONSUMER_GROUP,
+              () -> {
+                handlePaymentAuthorized(
+                    readJson(record.value(), PaymentEvents.PaymentAuthorized.class));
+                return null;
+              });
+      case EventTypes.PAYMENT_FAILED ->
+          idempotent.once(
+              eventId,
+              CONSUMER_GROUP,
+              () -> {
+                handlePaymentFailed(readJson(record.value(), PaymentEvents.PaymentFailed.class));
+                return null;
+              });
+      case EventTypes.PAYMENT_REFUNDED ->
+          idempotent.once(
+              eventId,
+              CONSUMER_GROUP,
+              () -> {
+                handlePaymentRefunded(
+                    readJson(record.value(), PaymentEvents.PaymentRefunded.class));
+                return null;
+              });
+      default -> {
+        /* not a reply we care about -- the PaymentRequested / PaymentRefundRequested we wrote */
+      }
+    }
   }
 
   @KafkaListener(topics = Topics.INVENTORY_COMMANDS, groupId = CONSUMER_GROUP)
   public void onInventoryEvent(ConsumerRecord<String, String> record) {
     String eventType = headerOrNull(record, "event-type");
-    if (!EventTypes.INVENTORY_RESERVED.equals(eventType)
-        && !EventTypes.INVENTORY_REJECTED.equals(eventType)) {
+    if (eventType == null) {
       return;
     }
     UUID eventId = UUID.fromString(headerOrNull(record, "event-id"));
-    idempotent.once(
-        eventId,
-        CONSUMER_GROUP,
-        () -> {
-          if (EventTypes.INVENTORY_RESERVED.equals(eventType)) {
-            handleInventoryReserved(
-                readJson(record.value(), InventoryEvents.InventoryReserved.class));
-          } else {
-            handleInventoryRejected(
-                readJson(record.value(), InventoryEvents.InventoryRejected.class));
-          }
-          return null;
-        });
+    switch (eventType) {
+      case EventTypes.INVENTORY_RESERVED ->
+          idempotent.once(
+              eventId,
+              CONSUMER_GROUP,
+              () -> {
+                handleInventoryReserved(
+                    readJson(record.value(), InventoryEvents.InventoryReserved.class));
+                return null;
+              });
+      case EventTypes.INVENTORY_REJECTED ->
+          idempotent.once(
+              eventId,
+              CONSUMER_GROUP,
+              () -> {
+                handleInventoryRejected(
+                    readJson(record.value(), InventoryEvents.InventoryRejected.class));
+                return null;
+              });
+      case EventTypes.INVENTORY_RELEASED ->
+          idempotent.once(
+              eventId,
+              CONSUMER_GROUP,
+              () -> {
+                handleInventoryReleased(
+                    readJson(record.value(), InventoryEvents.InventoryReleased.class));
+                return null;
+              });
+      default -> {
+        /* not a reply */
+      }
+    }
   }
 
   @KafkaListener(topics = Topics.SHIPPING_COMMANDS, groupId = CONSUMER_GROUP)
@@ -176,13 +212,12 @@ public class OrderSagaOrchestrator {
   private void handleInventoryRejected(InventoryEvents.InventoryRejected evt) {
     Order order = loadOrder(evt.orderUuid());
     order.transitionTo(OrderStatus.COMPENSATING_PAYMENT);
-    // Week 5 will wire the refund command. For now we cancel the order.
+    // Ask payment-service to refund. The PaymentRefunded reply will land us at CANCELLED.
     emit(
         evt.orderUuid(),
-        "Order",
-        EventTypes.ORDER_CANCELLED,
-        new OrderEvents.OrderCancelled(evt.orderUuid(), evt.reason()));
-    order.transitionTo(OrderStatus.CANCELLED);
+        "Payment",
+        EventTypes.PAYMENT_REFUND_REQUESTED,
+        new PaymentEvents.PaymentRefundRequested(evt.orderUuid()));
   }
 
   private void handleShipmentDispatched(ShippingEvents.ShipmentDispatched evt) {
@@ -199,12 +234,33 @@ public class OrderSagaOrchestrator {
   private void handleShipmentFailed(ShippingEvents.ShipmentFailed evt) {
     Order order = loadOrder(evt.orderUuid());
     order.transitionTo(OrderStatus.COMPENSATING_INVENTORY);
+    // First release the inventory hold; then we'll request the payment refund once we
+    // hear InventoryReleased back.
+    emit(
+        evt.orderUuid(),
+        "Inventory",
+        EventTypes.INVENTORY_RELEASE_REQUESTED,
+        new InventoryEvents.InventoryReleaseRequested(evt.orderUuid()));
+  }
+
+  private void handleInventoryReleased(InventoryEvents.InventoryReleased evt) {
+    Order order = loadOrder(evt.orderUuid());
+    order.transitionTo(OrderStatus.COMPENSATING_PAYMENT);
+    emit(
+        evt.orderUuid(),
+        "Payment",
+        EventTypes.PAYMENT_REFUND_REQUESTED,
+        new PaymentEvents.PaymentRefundRequested(evt.orderUuid()));
+  }
+
+  private void handlePaymentRefunded(PaymentEvents.PaymentRefunded evt) {
+    Order order = loadOrder(evt.orderUuid());
+    order.transitionTo(OrderStatus.CANCELLED);
     emit(
         evt.orderUuid(),
         "Order",
         EventTypes.ORDER_CANCELLED,
-        new OrderEvents.OrderCancelled(evt.orderUuid(), evt.reason()));
-    order.transitionTo(OrderStatus.CANCELLED);
+        new OrderEvents.OrderCancelled(evt.orderUuid(), "compensated"));
   }
 
   // ---------- helpers ----------

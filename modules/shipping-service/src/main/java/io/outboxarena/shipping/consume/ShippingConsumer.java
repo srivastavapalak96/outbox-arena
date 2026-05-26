@@ -29,6 +29,13 @@ public class ShippingConsumer {
   private static final String[] CARRIERS = {"FedEx", "Delhivery", "Bluedart"};
   static final String CONSUMER_GROUP = "shipping-service";
 
+  /**
+   * If set, any order whose UUID starts with this string is forced to fail dispatch. Lets the
+   * week-5 compensation scenario drive the shipment-failed path deterministically.
+   */
+  @org.springframework.beans.factory.annotation.Value("${shipping.force-fail-prefix:}")
+  private String forceFailPrefix;
+
   private final IdempotentConsumer idempotent;
   private final ShipmentRepository shipments;
   private final OutboxRecordRepository outbox;
@@ -68,20 +75,37 @@ public class ShippingConsumer {
   private void dispatch(ShippingEvents.ShippingRequested req) {
     String carrier = CARRIERS[Math.floorMod(req.orderUuid().hashCode(), CARRIERS.length)];
     Shipment shipment = new Shipment(req.orderUuid(), carrier);
-    String trackingNo = carrier.toUpperCase() + "-" + req.orderUuid().toString().substring(0, 8);
-    shipment.dispatch(trackingNo);
+
+    boolean forceFail =
+        forceFailPrefix != null
+            && !forceFailPrefix.isBlank()
+            && req.orderUuid().toString().startsWith(forceFailPrefix);
+
+    String replyType;
+    Object replyPayload;
+    if (forceFail) {
+      shipment.fail();
+      replyType = EventTypes.SHIPMENT_FAILED;
+      replyPayload =
+          new ShippingEvents.ShipmentFailed(
+              req.orderUuid(), "forced failure for compensation test");
+    } else {
+      String trackingNo = carrier.toUpperCase() + "-" + req.orderUuid().toString().substring(0, 8);
+      shipment.dispatch(trackingNo);
+      replyType = EventTypes.SHIPMENT_DISPATCHED;
+      replyPayload =
+          new ShippingEvents.ShipmentDispatched(
+              req.orderUuid(), shipment.getShipmentUuid(), trackingNo);
+    }
     shipments.save(shipment);
 
-    ShippingEvents.ShipmentDispatched payload =
-        new ShippingEvents.ShipmentDispatched(
-            req.orderUuid(), shipment.getShipmentUuid(), trackingNo);
     OutboxRecord reply =
         new OutboxRecord(
             UUID.randomUUID(),
             "Shipping",
             req.orderUuid().toString(),
-            EventTypes.SHIPMENT_DISPATCHED,
-            writeJson(payload),
+            replyType,
+            writeJson(replyPayload),
             shardKeyFor(req.orderUuid()));
     outbox.save(reply);
   }

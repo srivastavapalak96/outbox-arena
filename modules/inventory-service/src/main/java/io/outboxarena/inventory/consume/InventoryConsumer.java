@@ -57,21 +57,61 @@ public class InventoryConsumer {
   @KafkaListener(topics = Topics.INVENTORY_COMMANDS, groupId = CONSUMER_GROUP)
   public void onInventoryCommand(ConsumerRecord<String, String> record) {
     String eventType = headerOrNull(record, "event-type");
-    if (!EventTypes.INVENTORY_RESERVE_REQUESTED.equals(eventType)) {
-      LOG.debug("Ignoring unknown inventory command type {}", eventType);
+    if (eventType == null) {
       return;
     }
     UUID eventId = UUID.fromString(headerOrNull(record, "event-id"));
-    InventoryEvents.InventoryReservationRequested req =
-        readJson(record.value(), InventoryEvents.InventoryReservationRequested.class);
 
-    idempotent.once(
-        eventId,
-        CONSUMER_GROUP,
-        () -> {
-          reserve(req);
-          return null;
-        });
+    if (EventTypes.INVENTORY_RESERVE_REQUESTED.equals(eventType)) {
+      InventoryEvents.InventoryReservationRequested req =
+          readJson(record.value(), InventoryEvents.InventoryReservationRequested.class);
+      idempotent.once(
+          eventId,
+          CONSUMER_GROUP,
+          () -> {
+            reserve(req);
+            return null;
+          });
+    } else if (EventTypes.INVENTORY_RELEASE_REQUESTED.equals(eventType)) {
+      InventoryEvents.InventoryReleaseRequested req =
+          readJson(record.value(), InventoryEvents.InventoryReleaseRequested.class);
+      idempotent.once(
+          eventId,
+          CONSUMER_GROUP,
+          () -> {
+            release(req);
+            return null;
+          });
+    } else {
+      LOG.debug("Ignoring unknown inventory command type {}", eventType);
+    }
+  }
+
+  private void release(InventoryEvents.InventoryReleaseRequested req) {
+    var rows = reservations.findByOrderUuid(req.orderUuid());
+    for (InventoryReservation r : rows) {
+      if (r.getStatus() == io.outboxarena.inventory.domain.ReservationStatus.HELD) {
+        Inventory stock =
+            inventory
+                .findById(new InventoryKey(r.getSku(), r.getSellerId()))
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Missing inventory row for held reservation "
+                                + r.getReservationUuid()));
+        stock.release(r.getQty());
+        r.release();
+      }
+    }
+    OutboxRecord reply =
+        new OutboxRecord(
+            UUID.randomUUID(),
+            "Inventory",
+            req.orderUuid().toString(),
+            EventTypes.INVENTORY_RELEASED,
+            writeJson(new InventoryEvents.InventoryReleased(req.orderUuid())),
+            shardKeyFor(req.orderUuid()));
+    outbox.save(reply);
   }
 
   private void reserve(InventoryEvents.InventoryReservationRequested req) {

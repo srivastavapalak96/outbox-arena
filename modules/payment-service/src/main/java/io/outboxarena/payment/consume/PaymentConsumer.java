@@ -53,21 +53,34 @@ public class PaymentConsumer {
   @KafkaListener(topics = Topics.PAYMENT_COMMANDS, groupId = CONSUMER_GROUP)
   public void onPaymentCommand(ConsumerRecord<String, String> record) {
     String eventType = headerOrNull(record, "event-type");
-    if (!EventTypes.PAYMENT_REQUESTED.equals(eventType)) {
-      LOG.debug("Ignoring unknown payment command type {}", eventType);
+    if (eventType == null) {
       return;
     }
     UUID eventId = UUID.fromString(headerOrNull(record, "event-id"));
-    PaymentEvents.PaymentRequested req =
-        readJson(record.value(), PaymentEvents.PaymentRequested.class);
 
-    idempotent.once(
-        eventId,
-        CONSUMER_GROUP,
-        () -> {
-          authorise(req, eventId);
-          return null;
-        });
+    if (EventTypes.PAYMENT_REQUESTED.equals(eventType)) {
+      PaymentEvents.PaymentRequested req =
+          readJson(record.value(), PaymentEvents.PaymentRequested.class);
+      idempotent.once(
+          eventId,
+          CONSUMER_GROUP,
+          () -> {
+            authorise(req, eventId);
+            return null;
+          });
+    } else if (EventTypes.PAYMENT_REFUND_REQUESTED.equals(eventType)) {
+      PaymentEvents.PaymentRefundRequested req =
+          readJson(record.value(), PaymentEvents.PaymentRefundRequested.class);
+      idempotent.once(
+          eventId,
+          CONSUMER_GROUP,
+          () -> {
+            refund(req);
+            return null;
+          });
+    } else {
+      LOG.debug("Ignoring unknown payment command type {}", eventType);
+    }
   }
 
   private void authorise(PaymentEvents.PaymentRequested req, UUID incomingEventId) {
@@ -99,6 +112,32 @@ public class PaymentConsumer {
             writeJson(replyPayload),
             shardKeyFor(req.orderUuid()));
     outbox.save(reply);
+  }
+
+  private void refund(PaymentEvents.PaymentRefundRequested req) {
+    Payment payment =
+        payments
+            .findByOrderUuid(req.orderUuid())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Refund requested for unknown order " + req.orderUuid()));
+    // Idempotent at the row level too: an already-refunded payment short-circuits.
+    if (payment.getStatus() != io.outboxarena.payment.domain.PaymentStatus.REFUNDED) {
+      payment.refund();
+    }
+
+    PaymentEvents.PaymentRefunded reply =
+        new PaymentEvents.PaymentRefunded(req.orderUuid(), payment.getPaymentUuid());
+    OutboxRecord row =
+        new OutboxRecord(
+            UUID.randomUUID(),
+            "Payment",
+            req.orderUuid().toString(),
+            EventTypes.PAYMENT_REFUNDED,
+            writeJson(reply),
+            shardKeyFor(req.orderUuid()));
+    outbox.save(row);
   }
 
   private static String headerOrNull(ConsumerRecord<String, String> record, String name) {
