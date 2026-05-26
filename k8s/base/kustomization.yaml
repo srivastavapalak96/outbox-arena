@@ -1,0 +1,36 @@
+# Base kustomization for outbox-arena.
+# Production-shape manifests for all six service modules + Postgres + Kafka via Strimzi.
+# Overlays in k8s/overlays/local-kind apply dev-friendly patches (NodePort instead of
+# Ingress, image tags = :local, replica counts pinned at 1).
+#
+# Prereqs on the target cluster:
+#   - cert-manager (for Strimzi)
+#   - Strimzi operator installed in the strimzi-system namespace
+#   - kube-prometheus-stack (for the ServiceMonitor CR used in observability/)
+#
+# Apply:
+#   kubectl apply -k k8s/overlays/local-kind
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: outbox-arena
+
+resources:
+  - namespace.yaml
+  - postgres/configmap.yaml
+  - postgres/statefulset.yaml
+  - postgres/service.yaml
+  - kafka/cluster.yaml
+  - services/order-service.yaml
+  - services/payment-service.yaml
+  - services/inventory-service.yaml
+  - services/shipping-service.yaml
+  - services/projection-service.yaml
+  - services/notifier-sink.yaml
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: outbox-arena
+      app.kubernetes.io/managed-by: kustomize

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping-service
+  labels:
+    app.kubernetes.io/name: shipping-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shipping-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shipping-service
+    spec:
+      containers:
+        - name: shipping-service
+          image: ghcr.io/srivastavapalak96/outbox-arena/shipping-service:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8084, name: http }]
+          env:
+            - { name: SHIPPING_DB_URL,      value: jdbc:postgresql://postgres:5432/shipping_svc }
+            - { name: SHIPPING_DB_USER,     value: shipping_svc }
+            - { name: SHIPPING_DB_PASSWORD, value: shipping_svc }
+            - { name: KAFKA_BOOTSTRAP,      value: outbox-arena-kafka-kafka-bootstrap:9092 }
+            - { name: SERVER_PORT,          value: "8084" }
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8084 }, periodSeconds: 5 }
+          livenessProbe:  { httpGet: { path: /actuator/health, port: 8084 }, initialDelaySeconds: 30 }
+          resources:
+            requests: { cpu: 100m, memory: 384Mi }
+            limits:   { cpu: 500m, memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipping-service
+spec:
+  ports: [{ port: 8084, targetPort: 8084, name: http }]
+  selector:
+    app.kubernetes.io/name: shipping-service

@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  labels:
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/component: saga-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: order-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: order-service
+        app.kubernetes.io/component: saga-orchestrator
+    spec:
+      containers:
+        - name: order-service
+          image: ghcr.io/srivastavapalak96/outbox-arena/order-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+              name: http
+          env:
+            - name: ORDER_DB_URL
+              value: jdbc:postgresql://postgres:5432/order_svc
+            - name: ORDER_DB_USER
+              value: order_svc
+            - name: ORDER_DB_PASSWORD
+              value: order_svc
+            - name: KAFKA_BOOTSTRAP
+              value: outbox-arena-kafka-kafka-bootstrap:9092
+            - name: SERVER_PORT
+              value: "8081"
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8081 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8081 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits:   { cpu: 1, memory: 1Gi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  labels:
+    app.kubernetes.io/name: order-service
+spec:
+  ports:
+    - port: 8081
+      targetPort: 8081
+      name: http
+  selector:
+    app.kubernetes.io/name: order-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # The interesting metric: scale on outbox backlog. Requires the Prometheus adapter +
+    # custom metrics API. Documented here as the operationally-meaningful trigger; the
+    # raw CPU rule above keeps the HPA functional even without the custom adapter.
+    # - type: Pods
+    #   pods:
+    #     metric:
+    #       name: outbox_unpublished_count
+    #     target:
+    #       type: AverageValue
+    #       averageValue: "100"

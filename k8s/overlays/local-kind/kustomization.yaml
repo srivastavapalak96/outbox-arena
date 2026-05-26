@@ -1,0 +1,52 @@
+# Local-kind overlay: NodePort access for laptop browsing + dev-friendly resource limits.
+#
+# Apply:
+#   kind create cluster --name outbox-arena
+#   kubectl apply -k k8s/overlays/local-kind
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: outbox-arena
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Service
+      name: order-service
+    patch: |
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30081
+  - target:
+      kind: Service
+      name: projection-service
+    patch: |
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30095
+
+# Image tag override for locally built images. Use:
+#   ./gradlew :modules:order-service:jibDockerBuild -Pimage.tag=local
+# to build directly into the kind cluster's runtime.
+images:
+  - name: ghcr.io/srivastavapalak96/outbox-arena/order-service
+    newTag: local
+  - name: ghcr.io/srivastavapalak96/outbox-arena/payment-service
+    newTag: local
+  - name: ghcr.io/srivastavapalak96/outbox-arena/inventory-service
+    newTag: local
+  - name: ghcr.io/srivastavapalak96/outbox-arena/shipping-service
+    newTag: local
+  - name: ghcr.io/srivastavapalak96/outbox-arena/projection-service
+    newTag: local
+  - name: ghcr.io/srivastavapalak96/outbox-arena/notifier-sink
+    newTag: local

@@ -1,0 +1,58 @@
+# Strimzi KafkaCluster CR. Assumes the Strimzi operator is installed in the cluster
+# (kubectl apply -f https://strimzi.io/install/latest?namespace=strimzi-system).
+#
+# This is a single-broker KRaft cluster sized for local-kind. A production overlay would
+# bump to 3+ brokers, add storage class hints, and enable TLS.
+
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: outbox-arena-kafka
+  labels:
+    app.kubernetes.io/name: kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 3.7.1
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
+    resources:
+      requests: { cpu: 200m, memory: 512Mi }
+      limits:   { cpu: 1, memory: 1Gi }
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  labels:
+    strimzi.io/cluster: outbox-arena-kafka
+spec:
+  replicas: 1
+  roles:
+    - controller
+    - broker
+  storage:
+    type: persistent-claim
+    size: 5Gi
+    deleteClaim: true
+  resources:
+    requests: { cpu: 200m, memory: 512Mi }
+    limits:   { cpu: 1, memory: 1Gi }

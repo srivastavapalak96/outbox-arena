@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifier-sink
+  labels:
+    app.kubernetes.io/name: notifier-sink
+    app.kubernetes.io/component: stdout-sink
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notifier-sink
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notifier-sink
+    spec:
+      containers:
+        - name: notifier-sink
+          image: ghcr.io/srivastavapalak96/outbox-arena/notifier-sink:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8086, name: http }]
+          env:
+            - { name: KAFKA_BOOTSTRAP, value: outbox-arena-kafka-kafka-bootstrap:9092 }
+            - { name: SERVER_PORT,     value: "8086" }
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8086 }, periodSeconds: 5 }
+          livenessProbe:  { httpGet: { path: /actuator/health, port: 8086 }, initialDelaySeconds: 30 }
+          resources:
+            requests: { cpu: 50m,  memory: 256Mi }
+            limits:   { cpu: 200m, memory: 384Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notifier-sink
+spec:
+  ports: [{ port: 8086, targetPort: 8086, name: http }]
+  selector:
+    app.kubernetes.io/name: notifier-sink

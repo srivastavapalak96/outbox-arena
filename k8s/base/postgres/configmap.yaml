@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+data:
+  postgresql.conf: |
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 200
+    wal_level = logical
+    max_replication_slots = 10
+    max_wal_senders = 10
+    shared_buffers = 256MB
+    work_mem = 8MB
+    log_min_duration_statement = 250
+    timezone = 'UTC'
+  init.sql: |
+    -- Mirror of infra/postgres/init.sql; kept in sync manually for now.
+    -- A future commit can move this to a shared file with envsubst.
+    CREATE ROLE order_svc      WITH LOGIN PASSWORD 'order_svc'      CREATEDB;
+    CREATE ROLE payment_svc    WITH LOGIN PASSWORD 'payment_svc'    CREATEDB;
+    CREATE ROLE inventory_svc  WITH LOGIN PASSWORD 'inventory_svc'  CREATEDB;
+    CREATE ROLE shipping_svc   WITH LOGIN PASSWORD 'shipping_svc'   CREATEDB;
+    CREATE ROLE projection_svc WITH LOGIN PASSWORD 'projection_svc' CREATEDB;
+    CREATE DATABASE order_svc      OWNER order_svc;
+    CREATE DATABASE payment_svc    OWNER payment_svc;
+    CREATE DATABASE inventory_svc  OWNER inventory_svc;
+    CREATE DATABASE shipping_svc   OWNER shipping_svc;
+    CREATE DATABASE projection_svc OWNER projection_svc;
+    CREATE ROLE debezium WITH LOGIN REPLICATION PASSWORD 'debezium';
+    GRANT CONNECT ON DATABASE order_svc, payment_svc, inventory_svc, shipping_svc TO debezium;
+    \connect order_svc
+    GRANT CREATE ON DATABASE order_svc TO debezium;
+    GRANT USAGE, CREATE ON SCHEMA public TO debezium;
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
+    ALTER DEFAULT PRIVILEGES FOR ROLE order_svc IN SCHEMA public GRANT SELECT ON TABLES TO debezium;

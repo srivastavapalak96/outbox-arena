@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: projection-service
+  labels:
+    app.kubernetes.io/name: projection-service
+    app.kubernetes.io/component: cdc-projector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: projection-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: projection-service
+        app.kubernetes.io/component: cdc-projector
+    spec:
+      containers:
+        - name: projection-service
+          image: ghcr.io/srivastavapalak96/outbox-arena/projection-service:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8095, name: http }]
+          env:
+            - { name: PROJECTION_DB_URL,      value: jdbc:postgresql://postgres:5432/projection_svc }
+            - { name: PROJECTION_DB_USER,     value: projection_svc }
+            - { name: PROJECTION_DB_PASSWORD, value: projection_svc }
+            - { name: KAFKA_BOOTSTRAP,        value: outbox-arena-kafka-kafka-bootstrap:9092 }
+            - { name: SERVER_PORT,            value: "8095" }
+          readinessProbe: { httpGet: { path: /actuator/health, port: 8095 }, periodSeconds: 5 }
+          livenessProbe:  { httpGet: { path: /actuator/health, port: 8095 }, initialDelaySeconds: 30 }
+          resources:
+            requests: { cpu: 100m, memory: 384Mi }
+            limits:   { cpu: 500m, memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: projection-service
+spec:
+  ports: [{ port: 8095, targetPort: 8095, name: http }]
+  selector:
+    app.kubernetes.io/name: projection-service
