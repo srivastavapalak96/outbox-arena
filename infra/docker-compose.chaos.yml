@@ -1,0 +1,23 @@
+# Chaos overlay: adds Toxiproxy in front of Kafka.
+#
+# Usage:
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.chaos.yml up -d
+#
+# Services point at the Toxiproxy proxy via KAFKA_BOOTSTRAP=localhost:32092. The proxy
+# tunnels to the real Kafka broker on the docker network. From a chaos scenario script,
+# `curl localhost:8474` to control the proxy: add latency, drop connections, cut entirely.
+
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    container_name: outbox-toxiproxy
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8474:8474"     # Toxiproxy REST API
+      - "32092:32092"   # Proxied Kafka endpoint for host clients
+    networks: [outbox]
+    command:
+      - -host=0.0.0.0
+      - -port=8474
