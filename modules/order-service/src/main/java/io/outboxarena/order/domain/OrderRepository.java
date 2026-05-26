@@ -1,5 +1,6 @@
 package io.outboxarena.order.domain;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -16,4 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   @EntityGraph(attributePaths = {"items"})
   @Query("select o from Order o where o.orderUuid = :orderUuid")
   Optional<Order> findWithItemsByOrderUuid(@Param("orderUuid") UUID orderUuid);
+
+  long countByStatusIn(Collection<OrderStatus> statuses);
 }

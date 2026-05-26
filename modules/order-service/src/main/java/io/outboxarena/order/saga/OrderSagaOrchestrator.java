@@ -55,16 +55,19 @@ public class OrderSagaOrchestrator {
   private final OrderRepository orders;
   private final OutboxRecordRepository outbox;
   private final ObjectMapper mapper;
+  private final SagaMetrics metrics;
 
   public OrderSagaOrchestrator(
       IdempotentConsumer idempotent,
       OrderRepository orders,
       OutboxRecordRepository outbox,
-      ObjectMapper mapper) {
+      ObjectMapper mapper,
+      SagaMetrics metrics) {
     this.idempotent = idempotent;
     this.orders = orders;
     this.outbox = outbox;
     this.mapper = mapper;
+    this.metrics = metrics;
   }
 
   @KafkaListener(topics = Topics.PAYMENT_COMMANDS, groupId = CONSUMER_GROUP)
@@ -197,6 +200,8 @@ public class OrderSagaOrchestrator {
         "Order",
         EventTypes.ORDER_CANCELLED,
         new OrderEvents.OrderCancelled(evt.orderUuid(), evt.reason()));
+    metrics.recordCompensationPaymentFailed();
+    metrics.recordOrderCancelled();
   }
 
   private void handleInventoryReserved(InventoryEvents.InventoryReserved evt) {
@@ -212,6 +217,7 @@ public class OrderSagaOrchestrator {
   private void handleInventoryRejected(InventoryEvents.InventoryRejected evt) {
     Order order = loadOrder(evt.orderUuid());
     order.transitionTo(OrderStatus.COMPENSATING_PAYMENT);
+    metrics.recordCompensationInventoryRejected();
     // Ask payment-service to refund. The PaymentRefunded reply will land us at CANCELLED.
     emit(
         evt.orderUuid(),
@@ -229,11 +235,13 @@ public class OrderSagaOrchestrator {
         "Order",
         EventTypes.ORDER_COMPLETED,
         new OrderEvents.OrderCompleted(evt.orderUuid(), null, evt.shipmentUuid()));
+    metrics.recordOrderCompleted();
   }
 
   private void handleShipmentFailed(ShippingEvents.ShipmentFailed evt) {
     Order order = loadOrder(evt.orderUuid());
     order.transitionTo(OrderStatus.COMPENSATING_INVENTORY);
+    metrics.recordCompensationShipmentFailed();
     // First release the inventory hold; then we'll request the payment refund once we
     // hear InventoryReleased back.
     emit(
@@ -261,6 +269,7 @@ public class OrderSagaOrchestrator {
         "Order",
         EventTypes.ORDER_CANCELLED,
         new OrderEvents.OrderCancelled(evt.orderUuid(), "compensated"));
+    metrics.recordOrderCancelled();
   }
 
   // ---------- helpers ----------

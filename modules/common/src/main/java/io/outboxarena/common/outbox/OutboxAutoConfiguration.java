@@ -44,4 +44,9 @@ public class OutboxAutoConfiguration {
   public IdempotentConsumer idempotentConsumer(ProcessedEventRepository processedEvents) {
     return new IdempotentConsumer(processedEvents);
   }
+
+  @Bean
+  public OutboxBacklogGauge outboxBacklogGauge(MeterRegistry meterRegistry) {
+    return new OutboxBacklogGauge(meterRegistry);
+  }
 }
