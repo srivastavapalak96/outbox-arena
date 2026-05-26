@@ -57,29 +57,23 @@ for port in 8081 8082 8182; do
   done
 done
 
-echo "--- 3. POST ${ORDERS_TOTAL} orders rapidly"
+echo "--- 3. POST ${ORDERS_TOTAL} orders (sequential) + kill payment-service B mid-stream"
+KILL_AT=$((ORDERS_TOTAL / 2))
 for i in $(seq 1 "$ORDERS_TOTAL"); do
-  curl -fsS -o /dev/null -X POST http://localhost:8081/orders \
+  curl -fsS -o /dev/null -m 5 -X POST http://localhost:8081/orders \
       -H 'Content-Type: application/json' \
-      -d "{\"buyerId\":\"reb-${i}\",\"currency\":\"USD\",\"items\":[{\"sellerId\":\"seller-a\",\"sku\":\"sku-1\",\"qty\":1,\"unitPriceCents\":50}]}" &
-  if [ $((i % 8)) -eq 0 ]; then wait; fi
+      -d "{\"buyerId\":\"reb-${i}\",\"currency\":\"USD\",\"items\":[{\"sellerId\":\"seller-a\",\"sku\":\"sku-1\",\"qty\":1,\"unitPriceCents\":50}]}" \
+    || echo "    POST $i failed"
+  if [ "$i" = "$KILL_AT" ]; then
+    echo "--- 4. kill payment-service B mid-stream (after POST ${KILL_AT})"
+    PAYMENT_B_PID="$(lsof -i :8182 -nP -sTCP:LISTEN 2>/dev/null | awk 'NR>1 && $1=="java" {print $2; exit}' || true)"
+    if [ -n "$PAYMENT_B_PID" ]; then
+      echo "    killing payment-service B JVM (pid ${PAYMENT_B_PID})"
+      kill -9 "$PAYMENT_B_PID"
+    fi
+  fi
 done
-wait
-echo "  ${ORDERS_TOTAL} POSTs returned"
-
-echo "--- 4. wait 3s for some events to land, then kill payment-service B"
-sleep 3
-PAYMENT_B_PID="$(pgrep -fl 'SERVER_PORT=8182' | grep -v gradle | awk '{print $1}' | head -1 || true)"
-if [ -z "$PAYMENT_B_PID" ]; then
-  # fallback: find by listen port
-  PAYMENT_B_PID="$(lsof -i :8182 -nP -sTCP:LISTEN | awk 'NR>1 && $1=="java" {print $2; exit}' || true)"
-fi
-if [ -z "$PAYMENT_B_PID" ]; then
-  echo "couldn't find payment-service B PID; continuing without kill"
-else
-  echo "  killing payment-service B (pid ${PAYMENT_B_PID})"
-  kill -9 "$PAYMENT_B_PID"
-fi
+echo "  POST loop done"
 
 echo "--- 5. wait for outbox to drain on order-service + payments processed"
 for i in $(seq 1 "$DRAIN_DEADLINE_SECONDS"); do

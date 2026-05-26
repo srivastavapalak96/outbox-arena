@@ -18,6 +18,8 @@ SCENARIOS=(
   "cdc-projection.sh"
   "chaos-broker-kill.sh"
   "chaos-multi-poller-race.sh"
+  "chaos-sigkill-order-service.sh"
+  "chaos-consumer-rebalance.sh"
 )
 
 LOG_ROOT=".local/regression-sweep"

@@ -27,14 +27,14 @@ running Docker Desktop 29.2.1 + Postgres 16 + Kafka 3.7 (KRaft) + Debezium 2.7.3
 | [CDC -> projection](chaos/scenarios/cdc-projection.sh): WAL -> Debezium -> order_views read model | 1 order | 1 view row at status=COMPLETED | **0.00%** | 3s (CDC lag) |
 | [Broker kill mid-publish](chaos/scenarios/chaos-broker-kill.sh): proxy cut after 20% of POSTs; 5s outage | 100 | 100 unique event-ids on topic | **0.00%** | <1s drain after heal |
 | [Multi-poller race](chaos/scenarios/chaos-multi-poller-race.sh): 4 order-service instances polling same shards | 80 | 80 unique event-ids, 0 duplicates | **0.00%** | <1s drain |
+| [SIGKILL order-service mid-publish](chaos/scenarios/chaos-sigkill-order-service.sh): kill at POST 15/30 with 15 unpublished outbox rows | 15 (pre-kill survivors) | 15 unique event-ids after restart | **0.00%** | <1s drain after restart |
+| [Consumer rebalance](chaos/scenarios/chaos-consumer-rebalance.sh): 2 payment-service instances; kill one mid-stream | 20 | 20 payments + 20 processed_events, 0 duplicates | **0.00%** | ~45s |
 
-Planned for week 9 / 10:
+Still planned (post-release polish):
 
 | Scenario | Status |
 |----------|--------|
 | 1,000 orders/sec for 5 min via k6 + producer-vs-consumer audit | PLANNED |
-| SIGKILL after DB commit before outbox flush | PLANNED |
-| Consumer rebalance mid-batch | PLANNED |
 | K8s manifests + HPA on outbox.unpublished | base SHIPPED; custom-metric HPA documented (commented out) pending Prometheus adapter |
 
 ## Architecture
@@ -219,7 +219,7 @@ make health-infra             # confirms postgres + kafka + connect responding
 
 # 7. Run the full regression sweep (all 7 scenarios in sequence, ~5 minutes).
 ./chaos/scenarios/run-all.sh
-#   Last run summary:
+#   Last run summary (9/9 PASS):
 #     PASS  37s  happy-path.sh
 #     PASS  30s  compensation-payment-fail.sh
 #     PASS  27s  compensation-inventory-reject.sh
@@ -227,6 +227,8 @@ make health-infra             # confirms postgres + kafka + connect responding
 #     PASS  45s  cdc-projection.sh
 #     PASS  32s  chaos-broker-kill.sh
 #     PASS  73s  chaos-multi-poller-race.sh
+#     PASS  45s  chaos-sigkill-order-service.sh
+#     PASS  60s  chaos-consumer-rebalance.sh
 
 # 8. Look at the dashboards.
 open http://localhost:3000      # Grafana (admin/admin), saga-health + outbox-health dashboards
