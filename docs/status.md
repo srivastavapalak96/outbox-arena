@@ -1,6 +1,6 @@
 # Status
 
-Last updated: week 2.
+Last updated: week 5.
 
 | Area | Status |
 |------|--------|
@@ -16,6 +16,19 @@ Last updated: week 2.
 | order-service POST /orders writes orders+items+saga+outbox atomically | SHIPPED, 3 tests green |
 | ADR-0001 (records architecture decisions) | SHIPPED |
 | ADR-0002 (outbox + CDC as distinct planes) | SHIPPED |
+| Outbox poller (sharded, SKIP LOCKED, sync Kafka send) | SHIPPED, end-to-end test green |
+| OutboxPollerScheduler (split-bean pattern, no self-invocation gotcha) | SHIPPED |
+| Shared event DTOs (Payment/Inventory/Shipping/Order) | SHIPPED |
+| IdempotentConsumer (processed_events PK dedup) | SHIPPED |
+| Saga happy path: order -> payment -> inventory -> shipping -> COMPLETED | SHIPPED, 5s end-to-end |
+| Saga compensation: PaymentFailed -> CANCELLED | SHIPPED, 2s scenario green |
+| Saga compensation: InventoryRejected -> Refund -> CANCELLED | SHIPPED, 6s scenario green |
+| Saga compensation: ShipmentFailed -> Release -> Refund -> CANCELLED | SHIPPED, ~6s scenario green |
+| Debezium connector wired + projection-service consumes CDC events | PLANNED (week 6) |
+| Observability dashboards + traces | PLANNED (week 7) |
+| Chaos test suite (5 scenarios via Toxiproxy) | PLANNED (week 8) |
+| k6 load test + audit | PLANNED (week 9) |
+| K8s manifests | PLANNED (week 10) |
 | Outbox poller (sharded, `SKIP LOCKED`) | PLANNED (week 3) |
 | Saga happy-path orchestration | PLANNED (week 4) |
 | Saga compensation flows | PLANNED (week 5) |
