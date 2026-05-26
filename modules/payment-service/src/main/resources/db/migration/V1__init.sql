@@ -1,5 +1,6 @@
 -- payment-service V1: payments + outbox + processed_events.
--- See docs/adr/0002. Debezium will tail payments (week 6); outbox is NEVER tailed.
+-- See docs/adr/0002. Debezium tails business tables via per-database connectors; outbox
+-- is excluded from every connector's table.include.list to avoid double-publishing.
 
 CREATE TABLE payments (
     id              BIGSERIAL PRIMARY KEY,

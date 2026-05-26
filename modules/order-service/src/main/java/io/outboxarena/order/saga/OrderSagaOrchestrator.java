@@ -26,7 +26,8 @@ import org.springframework.stereotype.Component;
  * status. Every transition writes the next command's outbox row in the same transaction as the
  * order-row UPDATE, preserving the dual-write atomicity at every saga step (not just intake).
  *
- * <p>Happy-path flow (failure paths land in week 5):
+ * <p>Happy-path flow below; the compensation handlers (handleInventoryRejected,
+ * handleShipmentFailed, handlePaymentRefunded) implement the failure-path transitions.
  *
  * <pre>
  *   PENDING ---PaymentAuthorized---> PAYMENT_AUTHORIZED

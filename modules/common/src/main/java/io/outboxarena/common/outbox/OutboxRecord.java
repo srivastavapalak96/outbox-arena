@@ -13,7 +13,7 @@ import org.hibernate.type.SqlTypes;
 
 /**
  * One row in a service's outbox table. Written inside the same transaction as the business change
- * it describes; later polled and shipped to Kafka by an OutboxPoller (week 3).
+ * it describes; polled and shipped to Kafka by the {@link OutboxPoller} on a scheduled tick.
  */
 @Entity
 @Table(name = "outbox")

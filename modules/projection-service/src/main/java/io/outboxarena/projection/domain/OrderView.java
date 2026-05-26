@@ -8,9 +8,11 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Denormalised order projection. Built by consuming Debezium CDC events from orders, payments, and
- * shipments (week 6 wires up the consumer). This service never writes to its own database through
- * application code -- all writes come from the CDC stream.
+ * Denormalised order projection. Built by consuming Debezium CDC events from {@code orders} via
+ * {@link io.outboxarena.projection.consume.OrdersCdcConsumer}. Cross-DB joins onto payments and
+ * shipments are planned (each lives in its own per-service database; one Debezium connector per
+ * DB). This service never writes to its own database through application code -- all writes come
+ * from the CDC stream.
  */
 @Entity
 @Table(name = "order_views")
