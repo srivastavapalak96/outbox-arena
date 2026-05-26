@@ -39,4 +39,9 @@ public class OutboxAutoConfiguration {
       OutboxPoller poller, OutboxPollerProperties props, MeterRegistry meterRegistry) {
     return new OutboxPollerScheduler(poller, props, meterRegistry);
   }
+
+  @Bean
+  public IdempotentConsumer idempotentConsumer(ProcessedEventRepository processedEvents) {
+    return new IdempotentConsumer(processedEvents);
+  }
 }

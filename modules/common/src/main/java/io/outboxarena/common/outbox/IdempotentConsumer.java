@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>This is the consumer-side defence against the duplicate that Kafka's enable.idempotence cannot
  * dedupe -- the one produced by a poller crash between Kafka commit and Postgres UPDATE (ADR-0005).
+ *
+ * <p>Wired as a {@code @Bean} in {@link OutboxAutoConfiguration} so services without a {@code
+ * processed_events} table (e.g. projection-service) can opt out by setting {@code
+ * outbox-arena.outbox.enabled=false}.
  */
-@Component
 public class IdempotentConsumer {
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotentConsumer.class);

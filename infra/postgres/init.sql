@@ -25,21 +25,25 @@ GRANT CONNECT ON DATABASE order_svc, payment_svc, inventory_svc, shipping_svc TO
 -- which means migrations run by Flyway. The connector is configured with table.include.list
 -- restricted to business tables (see ADR-0002); outbox is never tailed.
 \connect order_svc
-GRANT USAGE ON SCHEMA public TO debezium;
+GRANT CREATE ON DATABASE order_svc TO debezium;
+GRANT USAGE, CREATE ON SCHEMA public TO debezium;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+-- Critical: FOR ROLE order_svc -- otherwise the default-privileges policy applies to
+-- tables created by postgres (this init script's role), not the ones Flyway creates
+-- as order_svc later.
+ALTER DEFAULT PRIVILEGES FOR ROLE order_svc IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
 
 \connect payment_svc
 GRANT USAGE ON SCHEMA public TO debezium;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+ALTER DEFAULT PRIVILEGES FOR ROLE payment_svc IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
 
 \connect inventory_svc
 GRANT USAGE ON SCHEMA public TO debezium;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+ALTER DEFAULT PRIVILEGES FOR ROLE inventory_svc IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
 
 \connect shipping_svc
 GRANT USAGE ON SCHEMA public TO debezium;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+ALTER DEFAULT PRIVILEGES FOR ROLE shipping_svc IN SCHEMA public GRANT SELECT ON TABLES TO debezium;

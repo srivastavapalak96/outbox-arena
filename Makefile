@@ -34,7 +34,7 @@ health-infra: ## Check infra readiness (Postgres, Kafka, Connect).
 	@echo "--- Kafka topics:"
 	@$(COMPOSE) exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list || true
 	@echo "--- Connect:"
-	@curl -fsS localhost:8083/ | head -c 200 && echo
+	@curl -fsS localhost:18083/ | head -c 200 && echo
 
 .PHONY: health
 health: ## Curl /actuator/health on all 6 services (8081-8086).
@@ -60,4 +60,4 @@ check: ## Full quality gate (spotless + tests).
 register-connector: ## Register the Debezium connector against the running Kafka Connect (week 6+).
 	curl -fsS -X POST -H 'Content-Type: application/json' \
 		--data @infra/kafka-connect/debezium-connector.json \
-		http://localhost:8083/connectors
+		http://localhost:18083/connectors

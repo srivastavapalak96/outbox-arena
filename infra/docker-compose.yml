@@ -85,7 +85,9 @@ services:
       CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
       CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
     ports:
-      - "8083:8083"
+      # Connect REST on the host is 18083 to avoid colliding with inventory-service on 8083.
+      # Inside the network the listener is still 8083 (the Connect default).
+      - "18083:8083"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS localhost:8083/ >/dev/null"]
       interval: 10s

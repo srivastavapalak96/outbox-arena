@@ -11,11 +11,12 @@
     "topic.prefix": "cdc",
     "slot.name": "outbox_arena_slot",
     "publication.name": "outbox_arena_pub",
-    "publication.autocreate.mode": "filtered",
+    "//comment_publication": "Publication is pre-created by the scenario script as the order_svc role (which owns the tables). Debezium's filtered autocreate requires the connector role to own the tables, which our debezium role doesn't.",
+    "publication.autocreate.mode": "disabled",
 
     "//comment_table_list":
-      "Tail business tables only. outbox is INTENTIONALLY excluded -- doing otherwise would double-publish events. See docs/adr/0002.",
-    "table.include.list": "public.orders,public.order_items,public.payments,public.shipments",
+      "Tail business tables only in the order_svc database. outbox is INTENTIONALLY excluded -- including it would double-publish events. See docs/adr/0002. payments and shipments live in their own per-service databases; a future week wires per-database connectors (this one stays focused).",
+    "table.include.list": "public.orders,public.order_items",
 
     "snapshot.mode": "initial",
     "decimal.handling.mode": "string",
