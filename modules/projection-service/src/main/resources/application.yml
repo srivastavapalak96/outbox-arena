@@ -21,8 +21,15 @@ spring:
         isolation.level: read_committed
       auto-offset-reset: earliest
 
+outbox-arena:
+  outbox:
+    # projection-service has no outbox table; never poll.
+    enabled: false
+
 server:
-  port: 8085
+  # Note: 8085 was the original plan but collides with a common host-side container
+  # binding in this dev environment. 8095 keeps the mnemonic 80nn-by-service close.
+  port: 8095
 
 management:
   endpoints:

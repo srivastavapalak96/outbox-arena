@@ -49,6 +49,37 @@ public class OrderView {
 
   protected OrderView() {}
 
+  /**
+   * Construct from a Debezium CDC after-image. Public because the CDC consumer lives in a sibling
+   * package, but the intent is that ONLY the CDC consumer ever calls this. The fields stay
+   * read-only outside this method.
+   */
+  public OrderView(
+      UUID orderUuid,
+      String buyerId,
+      String status,
+      long totalAmountCents,
+      String currency,
+      OffsetDateTime lastUpdatedAt) {
+    this.orderUuid = orderUuid;
+    this.buyerId = buyerId;
+    this.status = status;
+    this.totalAmountCents = totalAmountCents;
+    this.currency = currency;
+    this.lastUpdatedAt = lastUpdatedAt;
+  }
+
+  /** Apply a CDC after-image to an existing projection row. */
+  public void applyCdc(
+      String buyerId, String status, long totalAmountCents, String currency, String sourceLsn) {
+    this.buyerId = buyerId;
+    this.status = status;
+    this.totalAmountCents = totalAmountCents;
+    this.currency = currency;
+    this.sourceLsn = sourceLsn;
+    this.lastUpdatedAt = OffsetDateTime.now();
+  }
+
   public UUID getOrderUuid() {
     return orderUuid;
   }

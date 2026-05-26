@@ -19,3 +19,27 @@ CREATE DATABASE projection_svc OWNER projection_svc;
 -- Used by the Kafka Connect connector to read the WAL via pgoutput.
 CREATE ROLE debezium WITH LOGIN REPLICATION PASSWORD 'debezium';
 GRANT CONNECT ON DATABASE order_svc, payment_svc, inventory_svc, shipping_svc TO debezium;
+
+-- Grant schema-level read on each saga DB so Debezium can do the initial snapshot.
+-- Each ALTER DEFAULT PRIVILEGES applies to *future* tables created by the service owners,
+-- which means migrations run by Flyway. The connector is configured with table.include.list
+-- restricted to business tables (see ADR-0002); outbox is never tailed.
+\connect order_svc
+GRANT USAGE ON SCHEMA public TO debezium;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+
+\connect payment_svc
+GRANT USAGE ON SCHEMA public TO debezium;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+
+\connect inventory_svc
+GRANT USAGE ON SCHEMA public TO debezium;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;
+
+\connect shipping_svc
+GRANT USAGE ON SCHEMA public TO debezium;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO debezium;

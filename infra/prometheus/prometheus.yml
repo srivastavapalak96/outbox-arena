@@ -15,7 +15,7 @@ scrape_configs:
           - 'host.docker.internal:8082'   # payment-service
           - 'host.docker.internal:8083'   # inventory-service
           - 'host.docker.internal:8084'   # shipping-service
-          - 'host.docker.internal:8085'   # projection-service
+          - 'host.docker.internal:8095'   # projection-service
           - 'host.docker.internal:8086'   # notifier-sink
     relabel_configs:
       - source_labels: [__address__]
