@@ -18,16 +18,27 @@ SHIPPED, PARTIAL, and PLANNED, and the canonical plan at
 
 ## Headline measurements
 
-To be populated in week 9 once the load + chaos suites complete. The structure of the table
-is fixed up front so the deliverable is unambiguous:
+Each row links to the chaos scenario that produced the numbers; rerun on a clean clone with
+the listed command. All scenarios assume Docker Desktop on Apple Silicon, JDK 21 (toolchain
+auto-downloads JDK 17 for compilation).
 
-| Scenario | Events sent | Events received | Duplicates | Loss rate |
-|----------|-------------|-----------------|------------|-----------|
-| Happy path, 1000/s x 5min       | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| Broker kill mid-publish         | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| SIGKILL after DB commit         | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| Multi-poller race (12 inst)     | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| Consumer rebalance mid-batch    | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| Scenario | Events posted | Events received | Loss rate | Elapsed |
+|----------|---------------|-----------------|-----------|---------|
+| [Happy path](chaos/scenarios/happy-path.sh): order -> payment -> inventory -> shipping -> COMPLETED | 1 | 1 | 0.00% | 5s end-to-end |
+| [Compensation: payment fails](chaos/scenarios/compensation-payment-fail.sh) -> CANCELLED, no leak | 1 | 1 cancelled | 0.00% | 2s |
+| [Compensation: inventory rejects](chaos/scenarios/compensation-inventory-reject.sh) -> refund -> CANCELLED | 1 | 1 cancelled + refunded | 0.00% | 6s |
+| [Compensation: shipment fails](chaos/scenarios/compensation-shipment-fail.sh) -> release + refund -> CANCELLED | 1 | 1 cancelled + refunded + released | 0.00% | ~6s |
+| [CDC -> projection](chaos/scenarios/cdc-projection.sh): WAL -> Debezium -> order_views read model | 1 order | 1 view row at status=COMPLETED | 0.00% | 3s (CDC lag) |
+| [Broker kill mid-publish](chaos/scenarios/chaos-broker-kill.sh): proxy cut after 20% of POSTs; 5s outage | 100 | 100 (unique event-ids on topic) | 0.00% | <1s outbox drain after heal |
+
+Planned for week 9 (load + audit):
+
+| Scenario | Status |
+|----------|--------|
+| 1,000 orders/sec for 5 min via k6 + producer/consumer audit | PLANNED |
+| Multi-poller race (4 order-service instances on same shards) | PLANNED |
+| SIGKILL after DB commit before outbox flush | PLANNED |
+| Consumer rebalance mid-batch | PLANNED |
 
 ## Architecture (intent)
 
