@@ -33,4 +33,10 @@ public class OutboxAutoConfiguration {
       MeterRegistry meterRegistry) {
     return new OutboxPoller(props, kafkaTemplate, meterRegistry);
   }
+
+  @Bean
+  public OutboxPollerScheduler outboxPollerScheduler(
+      OutboxPoller poller, OutboxPollerProperties props, MeterRegistry meterRegistry) {
+    return new OutboxPollerScheduler(poller, props, meterRegistry);
+  }
 }

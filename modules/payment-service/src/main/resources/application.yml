@@ -21,6 +21,7 @@ spring:
         enable.idempotence: true
     consumer:
       group-id: payment-service
+      auto-offset-reset: earliest
       properties:
         isolation.level: read_committed
 

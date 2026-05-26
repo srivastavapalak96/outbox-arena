@@ -2,7 +2,6 @@ package io.outboxarena.common.outbox;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
@@ -12,7 +11,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +45,6 @@ public class OutboxPoller {
   private final KafkaTemplate<String, String> kafkaTemplate;
   private final MeterRegistry meterRegistry;
   private final Counter publishedCounter;
-  private final Counter failureCounter;
-  private final Timer publishTimer;
 
   @PersistenceContext private EntityManager em;
 
@@ -63,35 +59,12 @@ public class OutboxPoller {
         Counter.builder("outbox.publish.total")
             .description("Outbox rows successfully published to Kafka")
             .register(meterRegistry);
-    this.failureCounter =
-        Counter.builder("outbox.publish.failures")
-            .description("Outbox publish failures (will retry next sweep)")
-            .register(meterRegistry);
-    this.publishTimer =
-        Timer.builder("outbox.publish.duration")
-            .description("Latency per outbox publish iteration")
-            .register(meterRegistry);
-  }
-
-  @Scheduled(fixedDelayString = "${outbox-arena.outbox.poll-interval:PT0.2S}")
-  public void sweep() {
-    if (!props.isEnabled()) {
-      return;
-    }
-    for (Integer shard : props.getShards()) {
-      try {
-        publishTimer.recordCallable(() -> sweepShard(shard));
-      } catch (Exception e) {
-        LOG.warn("Outbox sweep failed for shard {}: {}", shard, e.toString());
-        failureCounter.increment();
-      }
-    }
-    refreshUnpublishedGauge();
   }
 
   /**
    * One sweep over one shard. Public on purpose: tests drive it directly so they don't need to wait
-   * for the {@code @Scheduled} interval.
+   * for the scheduler tick. The scheduled tick lives on {@link OutboxPollerScheduler} so the call
+   * to this method goes through Spring's transactional proxy (avoids the self-invocation gotcha).
    *
    * @return number of rows published in this sweep (0 if no work).
    */
@@ -105,10 +78,9 @@ public class OutboxPoller {
                 OutboxRecord.class)
             .setParameter("shard", (short) shard)
             .setMaxResults(props.getBatchSize())
-            .setHint("jakarta.persistence.lock.scope", "PESSIMISTIC_WRITE")
-            .setHint("jakarta.persistence.query.timeout", 5000) // 5s safety net
+            .setHint("jakarta.persistence.query.timeout", 5000)
             .setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-            .setHint("jakarta.persistence.lock.timeout", -2) // SKIP LOCKED
+            .setHint("jakarta.persistence.lock.timeout", -2) // -2 = SKIP LOCKED on PG
             .getResultList();
 
     if (batch.isEmpty()) {
@@ -146,13 +118,5 @@ public class OutboxPoller {
 
   String topicFor(OutboxRecord row) {
     return props.getTopicPrefix() + "." + row.getAggregateType().toLowerCase() + ".v1";
-  }
-
-  private void refreshUnpublishedGauge() {
-    Long unpublished =
-        em.createQuery(
-                "select count(r) from OutboxRecord r where r.publishedAt is null", Long.class)
-            .getSingleResult();
-    meterRegistry.gauge("outbox.unpublished.count", unpublished);
   }
 }
